@@ -1,1 +1,1 @@
-##Código Python do nosso jogo
+# Código Python do nosso jogo
