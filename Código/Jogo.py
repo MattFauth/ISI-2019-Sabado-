@@ -1,28 +1,14 @@
-# life.py -- A turtle-based version of Conway's Game of Life.
-#
-# An empty board will be displayed, and the following commands are available:
-#  E : Erase the board
-#  R : Fill the board randomly
-#  S : Step for a single generation
-#  C : Update continuously until a key is struck
-#  Q : Quit
-#  Cursor keys :  Move the cursor around the board
-#  Space or Enter : Toggle the contents of the cursor's position
-#
-
 import sys
 import turtle
 import random
 
 CELL_SIZE = 10                  # Measured in pixels
 
-class LifeBoard:
+class QuadroVida:
     """Encapsulates a Life board
-
     Attributes:
     xsize, ysize : horizontal and vertical size of the board
     state : set containing (x,y) coordinates for live cells.
-
     Methods:
     display(update_board) -- Display the state of the board on-screen.
     erase() -- clear the entire board
@@ -30,11 +16,9 @@ class LifeBoard:
     set(x,y) -- set the given cell to Live; doesn't refresh the screen
     toggle(x,y) -- change the given cell from live to dead, or vice
                    versa, and refresh the screen display
-
     """
     def __init__(self, xsize, ysize):
-        """Create a new LifeBoard instance.
-
+        """Create a new QuadroVida instance.
         scr -- curses screen object to use for display
         char -- character used to render live cells (default: '*')
         """
@@ -54,16 +38,9 @@ class LifeBoard:
         key = (x, y)
         self.state.add(key)
 
-    def aleatorio(self):
-        "Fill the board with a random pattern"
-        self.erase()
-        for i in range(0, self.xsize):
-            for j in range(0, self.ysize):
-                if random.random() > 0.5:
-                    self.set(i, j)
 
-    def toggle(self, x, y):
-        """Toggle a cell's state between live and dead."""
+    def alterar(self, x, y):
+        "Alterna o estado das celulas"
         if not self.ehValido(x, y):
             raise ValueError("Coordinates {}, {} out of range 0..{}, 0..{}".format(
                     x, y, self.xsize, self.ysize))
@@ -73,12 +50,12 @@ class LifeBoard:
         else:
             self.state.add(key)
 
-    def erase(self):
-        """Clear the entire board."""
+    def apagar(self):
+        "Limpa o quadro"
         self.state.clear()
 
     def step(self):
-        "Compute one generation, updating the display."
+        "Passa uma geracao"
         d = set()
         for i in range(self.xsize):
             x_range = range( max(0, i-1), min(self.xsize, i+2) )
@@ -90,27 +67,20 @@ class LifeBoard:
                         if (xp, yp) in self.state:
                             s += 1
 
-                # Subtract the central cell's value; it doesn't count.
                 s -= live             
-                ##print(d)
-                ##print(i, j, s, live)
                 if s == 2:
-                    # Birth
+                    # Nascimento
                     d.add((i,j))
                 elif s == 3 and live: 
-                    # Survival
+                    # Sobrevivencia
                     d.add((i,j))
                 elif live:
-                    # Death
+                    # Morte
                     pass
 
-        self.state = d
-
-    #
-    # Display-related methods
-    #                    
+        self.state = d          
     def draw(self, x, y):
-        "Update the cell (x,y) on the display."
+        "atualiza a celula (x,y) no display."
         turtle.penup()
         key = (x, y)
         if key in self.state:
@@ -125,7 +95,7 @@ class LifeBoard:
             turtle.end_fill()
             
     def display(self):
-        """Draw the whole board"""
+        """Desenha o quadro"""
         turtle.clear()
         for i in range(self.xsize):
             for j in range(self.ysize):
@@ -137,7 +107,7 @@ def display_help_window():
     from turtle import TK
     root = TK.Tk()
     frame = TK.Frame()
-    canvas = TK.Canvas(root, width=200, height=250, bg="white")
+    canvas = TK.Canvas(root, width=200, height=250, bg="grey")
     canvas.pack()
     help_screen = turtle.TurtleScreen(canvas)
     help_t = turtle.RawTurtle(help_screen)
@@ -148,13 +118,12 @@ def display_help_window():
     width, height = help_screen.screensize()
     line_height = 20
     y = height // 2 - 30
-    for s in ("Click on cells to make them alive or dead.",
-              "Keyboard commands:",
-              " E)rase the board",
-              " R)andom fill",
-              " S)tep once or",
-              " C)ontinuously -- use 'S' to resume stepping",
-              " Q)uit"):
+    for s in ("Clique nas celulas para definir se estao vivas ou mortas",
+              "Comandos do teclado:",
+              " A)Apaga o quadro",
+              " U)Uma geracao",
+              " C)Geracao continua",
+              " S)Sair"):
         help_t.setpos(-(width / 2), y)
         help_t.write(s, font=('sans-serif', 14, 'normal'))
         y -= line_height
@@ -173,36 +142,32 @@ def main():
     turtle.tracer(0, 0)
     turtle.penup()
 
-    board = LifeBoard(xsize // CELL_SIZE, 1 + ysize // CELL_SIZE)
+    board = QuadroVida(xsize // CELL_SIZE, 1 + ysize // CELL_SIZE)
 
-    # Set up mouse bindings
-    def toggle(x, y):
+    def alterar(x, y):
         cell_x = x // CELL_SIZE
         cell_y = y // CELL_SIZE
         if board.ehValido(cell_x, cell_y):
-            board.toggle(cell_x, cell_y)
+            board.alterar(cell_x, cell_y)
             board.display()
 
     turtle.onscreenclick(turtle.listen)
-    turtle.onscreenclick(toggle)
+    turtle.onscreenclick(alterar)
 
-    board.aleatorio()
     board.display()
 
-    # Set up key bindings
-    def erase():
-        board.erase()
+    def apagar():
+        board.apagar()
         board.display()
-    turtle.onkey(erase, 'e')
+    turtle.onkey(apagar, 'a')
 
     def aleatorio():
         board.aleatorio()
         board.display()
     turtle.onkey(aleatorio, 'r')
 
-    turtle.onkey(sys.exit, 'q')
+    turtle.onkey(sys.exit, 's')
 
-    # Set up keys for performing generation steps, either one-at-a-time or not.
     continuous = False
     def step_once():
         nonlocal continuous
@@ -217,15 +182,12 @@ def main():
     def perform_step():
         board.step()
         board.display()
-        # In continuous mode, we set a timer to display another generation
-        # after 25 millisenconds.
         if continuous:
             turtle.ontimer(perform_step, 25)
 
-    turtle.onkey(step_once, 's')
+    turtle.onkey(step_once, 'u')
     turtle.onkey(step_continuous, 'c')
 
-    # Enter the Tk main loop
     turtle.listen()
     turtle.mainloop()
 
